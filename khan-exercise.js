@@ -38,11 +38,6 @@ var Translate = new function(){
 
 	this.langdefault = "en";
 	this.lang = "nl";
-	this.table = {};
-	this.production = ( typeof(userExercise) !== "undefined" );
-	this.current = ( this.production ? userExercise.exercise : window.location.pathname.substring(window.location.pathname.lastIndexOf('/')+1).split('.')[0] );
-	this.exercisefile = ( this.production ? "/khan-exercises/exercises/" : "" ) + this.current + ".lang.js";
-	this.globalfile = ( this.production ? "/khan-exercises/exercises/" : "" ) +"lang.js";
 
 	this.switchLang = function(map){
 		if(map[this.lang]){
@@ -51,44 +46,6 @@ var Translate = new function(){
 		else{
 			return map[this.langdefault];
 		}
-	}
-
-	this.getTranslation = function(url, name){
-		//TODO: Implement caching on client side
-		$.ajax({
-			type: "GET",
-			url: url,
-			async:false,
-			success: function(data){
-				Translate.table[name] = eval(data);
-			}
-		})
-		return this.table[name];
-	}
-
-	this.load = function(){
-
-		Khan.Util.tokenreplace = Translate;
-		Khan.Util.translate = Translate;
-
-		var globals = this.getTranslation(this.globalfile, "globals");
-		$('.exercise-title').each(function(){
-			var title = $('title').html().substring(0, $('title').html().indexOf('|')-1)
-			if(Translate.table["globals"]["titles"][Translate.lang][title]){
-				$(this).html(Translate.table["globals"]["titles"][Translate.lang][title])
-			}
-		});
-
-		var exercisedata = this.getTranslation(this.exercisefile, this.current);
-		if(exercisedata && exercisedata[this.lang]){
-			$('[data-tt]').each(function(){
-				token = $(this).attr('data-tt');
-				if(Translate.table[Translate.current][Translate.lang][token]){
-					$(this).html(Translate.table[Translate.current][Translate.lang][token]);
-				}
-			});
-		}
-
 	}
 
 };
@@ -1702,8 +1659,6 @@ var Khan = (function() {
 				userExercise.exercise_model.display_name : document.title );
 		}
 
-		Translate.load();
-
 		exercises = jQuery( ".exercise" ).detach();
 
 		// Setup appropriate img URLs
@@ -2643,19 +2598,6 @@ var Khan = (function() {
 
 			// Maybe the exercise we just loaded loads some others
 			newContents.find( ".exercise[data-name]" ).each( loadExercise );
-
-			//Tokenreplace
-
-			var langfile = ( Translate.production ? "/khan-exercises/exercises/" : "" ) + name + ".lang.js";
-			var translation = Translate.getTranslation(langfile, name);
-			if(translation && translation[Translate.lang]){
-				newContents.find('[data-tt]').each(function(){
-					token = $(this).attr('data-tt');
-					if(translation[Translate.lang][token]){
-						$(this).html(translation[Translate.lang][token]);
-					}
-				})
-			}
 
 			// Save the filename and weights
 			newContents.filter( ".exercise" ).data( "name", name );
